@@ -23,9 +23,21 @@
 
 ## 🛠️ Requisitos Previos
 
-Antes de comenzar, asegúrate de tener instalado:
-- **Python 3.8** o superior.
-- **Git** (opcional, para clonar el repositorio).
+Para ejecutar este proyecto de manera óptima, asegúrate de cumplir con las siguientes especificaciones técnicas de entorno:
+
+### 1. Entorno de Ejecución
+- **Python**: Versión **3.13.1** (probada y recomendada). Compatible con Python 3.10 o superior.
+- **Git**: Para control de versiones y clonar el repositorio (opcional).
+- **Conexión a Internet**: Necesaria para realizar consultas en tiempo real a las APIs públicas de geocodificación (Nominatim) y enrutamiento (OSRM), y para cargar los mapas satelitales/oscuros de CartoDB.
+
+### 2. Librerías de Software Clave (Pines de Versión Puntos de Inflexión)
+El sistema se ejecuta sobre las siguientes versiones específicas detalladas en `requirements.txt`:
+- **Flask (v3.1.3)**: Framework para el servidor web y rutas API.
+- **scikit-learn (v1.8.0)**: Biblioteca de Machine Learning para preprocesamiento y entrenamiento.
+- **pandas (v3.0.2)** y **numpy (v2.4.4)**: Carga, manipulación de arreglos numéricos y lectura del set de datos en Excel.
+- **joblib (v1.5.3)**: Serialización y deserialización del modelo y escalador entrenados.
+- **openpyxl (v3.1.5)**: Motor de lectura necesario para procesar archivos de formato Excel `.xlsx`.
+- **Jinja2 (v3.1.6)**: Motor de plantillas HTML para Flask.
 
 ---
 
