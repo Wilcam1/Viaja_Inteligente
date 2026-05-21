@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viaja Inteligente - Optimización de Consumo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Leaflet.js para el mapa de ruta -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Panel de Entrada -->
+        <div class="glass-card">
+            <div class="logo-container">
+                <div class="logo-icon-wrapper">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="logo-svg">
+                        <!-- Rays of light -->
+                        <path d="M12 2v2M6.34 6.34l1.42 1.42M17.66 6.34l-1.42 1.42M3.5 12h2M18.5 12h2" stroke="#00E676" stroke-width="2" stroke-linecap="round" />
+                        <!-- Bulb contour & fill -->
+                        <path d="M12 6a6 6 0 0 0-6 6c0 2.2 1.2 4.1 3 5.1v2.3a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-2.3c1.8-1 3-2.9 3-5.1a6 6 0 0 0-6-6z" fill="rgba(0, 230, 118, 0.15)" stroke="#00E676" stroke-width="2" stroke-linejoin="round" />
+                        <!-- Internal plant filament -->
+                        <path d="M12 17v-6" stroke="#00E676" stroke-width="2" stroke-linecap="round" />
+                        <path d="M12 14c-1.5-1-2.5-1.5-2.5-2.5 0-1.5 1.5-1.5 2.5.5M12 13c1.5-1 2.5-1.5 2.5-2.5 0-1.5-1.5-1.5-2.5.5" fill="#00E676" stroke="#00E676" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" />
+                        <!-- Base of the bulb (screw) -->
+                        <path d="M9.5 21.5h5" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round" />
+                        <path d="M10.5 23h3" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round" />
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1 class="logo-title">Viaja Inteligente</h1>
+                    <p class="logo-subtitle">Planifica mejor, disfruta más.</p>
+                </div>
+            </div>
+            
+            <form id="fuelForm">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="origen">Origen (Colombia)</label>
+                        <input type="text" id="origen" placeholder="Ej. Bogotá" list="municipios-list" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="destino">Destino (Colombia)</label>
+                        <input type="text" id="destino" placeholder="Ej. Medellín" list="municipios-list" autocomplete="off">
+                    </div>
+                </div>
+                <datalist id="municipios-list"></datalist>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group" style="position: relative;">
+                        <label for="km">Distancia (KM) <span id="dist_loading" style="color: var(--primary); display: none; font-size: 0.8rem; font-weight: normal;">(Calculando...)</span></label>
+                        <input type="number" id="km" required placeholder="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="cilindraje">Cilindraje</label>
+                        <input type="number" step="0.1" id="cilindraje" required placeholder="1.6">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="precio_combustible">Precio Combustible</label>
+                        <input type="number" id="precio_combustible" required placeholder="15000">
+                    </div>
+                    <div class="form-group">
+                        <label for="velocidad">Velocidad (km/h)</label>
+                        <input type="number" id="velocidad" required placeholder="90">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="peso_vehiculo">Peso Vehículo (kg)</label>
+                        <input type="number" id="peso_vehiculo" required placeholder="1200">
+                    </div>
+                    <div class="form-group">
+                        <label for="calibre_llantas">Calibre Llantas</label>
+                        <input type="number" id="calibre_llantas" required placeholder="205">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="psi_llantas">Presión Llantas (PSI)</label>
+                        <input type="number" id="psi_llantas" required placeholder="32">
+                    </div>
+                    <div class="form-group">
+                        <label for="presupuesto">Presupuesto viaje</label>
+                        <input type="number" id="presupuesto" required placeholder="50000">
+                    </div>
+                </div>
+
+                <button type="submit">
+                    <span class="btn-text">Analizar Viaje</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Panel de Resultados -->
+        <div class="glass-card">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Nuestra IA está calculando...</p>
+            </div>
+
+            <div class="results-area">
+                <h2>Resultados</h2>
+                
+                <div class="result-item">
+                    <span class="badge" id="res_clasificacion">Económico</span>
+                    <span id="res_modelo" style="font-size: 0.7rem; color: var(--text-muted); float: right;"></span>
+                </div>
+
+                <div class="result-item">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <label>Costo Estimado Actual</label>
+                            <span class="result-val" id="res_costo_actual">$0</span>
+                        </div>
+                        <div>
+                            <label>Tiempo Est. Actual</label>
+                            <span class="result-val" id="res_tiempo_actual">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-item">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <label>Costo Optimizado</label>
+                            <span class="result-val" style="color: var(--primary);" id="res_costo_opt">$0</span>
+                        </div>
+                        <div>
+                            <label>Tiempo Est. Optimizado</label>
+                            <span class="result-val" style="color: var(--primary);" id="res_tiempo_opt">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-item">
+                    <label>Ahorro Potencial</label>
+                    <span class="result-val" id="res_ahorro">$0</span>
+                </div>
+
+                <div class="result-item" style="border: none;">
+                    <span class="badge" id="res_presupuesto">DENTRO DEL PRESUPUESTO</span>
+                </div>
+
+                <h3>Recomendaciones IA</h3>
+                <ul class="recommendations" id="res_recomendaciones">
+                </ul>
+            </div>
+        </div>
+
+        <!-- Contenedor del Mapa (Tercera Tarjeta) -->
+        <div id="map-section" class="glass-card" style="display: none; flex-direction: column; position: relative;">
+            <h3 style="margin-bottom: 0.8rem; font-size: 1.2rem; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; width: 100%;">
+                <span style="display: flex; align-items: center; gap: 0.5rem;">🗺️ Recorrido Sugerido</span>
+                <span id="btn-maximize-map" role="button" style="cursor: pointer; color: var(--primary); font-size: 1.3rem; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s; padding: 6px; border-radius: 8px; width: 32px; height: 32px; border: 1px solid rgba(0, 230, 118, 0.2);" title="Ampliar mapa" onmouseover="this.style.transform='scale(1.15)'; this.style.background='rgba(0, 230, 118, 0.1)';" onmouseout="this.style.transform='scale(1)'; this.style.background='none';">
+                    ⛶
+                </span>
+            </h3>
+            <div id="map" style="height: 380px; border-radius: 16px; border: 1px solid var(--glass-border); z-index: 10;"></div>
+        </div>
+    </div>
+
+    <!-- Modal para Mapa Ampliado -->
+    <div id="map-modal" class="modal">
+        <div class="modal-content glass-card">
+            <div class="modal-header">
+                <h3 style="font-size: 1.4rem; color: var(--text); margin: 0; display: flex; align-items: center; gap: 0.5rem;">🗺️ Recorrido Sugerido (Ampliado)</h3>
+                <span class="close-modal" id="closeMapModal">&times;</span>
+            </div>
+            <div id="modal-map" style="height: 500px; border-radius: 16px; border: 1px solid var(--glass-border); z-index: 10;"></div>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
