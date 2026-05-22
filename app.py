@@ -6,6 +6,7 @@ import traceback
 import urllib.request
 import urllib.parse
 import json
+import math
 
 app = Flask(__name__)
 
@@ -241,6 +242,16 @@ def sample_coordinates(coords, max_points=35):
             sampled.append(coords[idx])
     return sampled
 
+def get_distance_meters(lat1, lon1, lat2, lon2):
+    # Fórmula de Haversine para distancia en metros
+    R = 6371000
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlon/2)**2
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
 @app.route('/get_pois', methods=['POST'])
 def get_pois():
     try:
@@ -249,30 +260,39 @@ def get_pois():
         if not route_geometry or 'coordinates' not in route_geometry:
             return jsonify({"error": "Geometria de ruta no valida"}), 400
             
-        coords = route_geometry['coordinates']
-        sampled_coords = sample_coordinates(coords, max_points=35)
-        
-        if not sampled_coords:
+        coords = route_geometry['coordinates'] # [[lon, lat], ...]
+        if not coords:
             return jsonify({"error": "No hay coordenadas en la ruta"}), 400
             
-        # Formatear coordenadas para Overpass QL (lat,lon)
-        coord_string = ", ".join(f"{c[1]},{c[0]}" for c in sampled_coords)
+        # Calcular el tamaño del bounding box
+        lats = [c[1] for c in coords]
+        lons = [c[0] for c in coords]
+        lat_min, lat_max = min(lats), max(lats)
+        lon_min, lon_max = min(lons), max(lons)
         
-        query = f"""[out:json][timeout:15];
+        # Margen de 0.03 grados (~3 km)
+        padding = 0.03
+        s = lat_min - padding
+        n = lat_max + padding
+        w = lon_min - padding
+        e = lon_max + padding
+        bbox = f"{s:.5f},{w:.5f},{n:.5f},{e:.5f}"
+        
+        # Bbox optimizado: hoteles y areas de descanso como node unicamente para evitar timeouts
+        query = f"""[out:json][timeout:20];
 (
-  node["amenity"="fuel"](around:2000,{coord_string});
-  node["amenity"="charging_station"](around:2000,{coord_string});
-  node["barrier"="toll_booth"](around:2000,{coord_string});
-  node["tourism"~"hotel|motel|hostel"](around:2000,{coord_string});
-  node["highway"="rest_area"](around:2000,{coord_string});
+  nwr["amenity"="fuel"]({bbox});
+  nwr["amenity"="charging_station"]({bbox});
+  nwr["barrier"="toll_booth"]({bbox});
+  node["tourism"~"hotel|motel|hostel"]({bbox});
+  node["highway"="rest_area"]({bbox});
 );
-out body;"""
+out center;"""
 
         servers = [
             "https://lz4.overpass-api.de/api/interpreter",
-            "https://overpass-api.de/api/interpreter",
             "https://z.overpass-api.de/api/interpreter",
-            "https://overpass.osm.ch/api/interpreter"
+            "https://overpass-api.de/api/interpreter"
         ]
         
         post_data = urllib.parse.urlencode({"data": query}).encode("utf-8")
@@ -288,8 +308,13 @@ out body;"""
                 method="POST"
             )
             try:
+                # Usar timeout de 10s para dar tiempo de respuesta estable en rutas largas
                 with urllib.request.urlopen(req, timeout=10) as res:
                     res_data = json.loads(res.read().decode("utf-8"))
+                    if "remark" in res_data and not res_data.get("elements"):
+                        print(f"[WARN] Servidor {server} devolvió advertencia: {res_data['remark']}")
+                        last_err = res_data["remark"]
+                        continue
                     elements = res_data.get("elements", [])
                     success = True
                     break
@@ -300,17 +325,56 @@ out body;"""
         if not success:
             return jsonify({"error": f"Error al conectar con los servidores de OpenStreetMap: {last_err}"}), 503
             
+        # Simplificación de ruta a intervalos de ~1500m para el filtrado ultra rápido en Python
+        simplified_coords = []
+        if coords:
+            simplified_coords.append(coords[0])
+            last_pt = coords[0]
+            for pt in coords[1:]:
+                d_lat = pt[1] - last_pt[1]
+                d_lon = pt[0] - last_pt[0]
+                # (1500 / 111000)^2 = 0.000182
+                if (d_lat * d_lat + d_lon * d_lon) > 0.000182:
+                    simplified_coords.append(pt)
+                    last_pt = pt
+            if coords[-1] not in simplified_coords:
+                simplified_coords.append(coords[-1])
+                
+        # Filtrado ultra rápido por caja delimitadora aproximada (3000m) y luego Haversine exacto (2000m)
+        threshold_deg = 3000 / 111000.0
+        threshold_sq = threshold_deg * threshold_deg
+        
+        filtered_elements = []
+        for el in elements:
+            center = el.get("center")
+            lat = el.get("lat") or (center.get("lat") if isinstance(center, dict) else None)
+            lon = el.get("lon") or (center.get("lon") if isinstance(center, dict) else None)
+            if lat is None or lon is None:
+                continue
+                
+            is_near = False
+            for r_lon, r_lat in simplified_coords:
+                d_lat = lat - r_lat
+                d_lon = lon - r_lon
+                if d_lat * d_lat + d_lon * d_lon <= threshold_sq:
+                    if get_distance_meters(lat, lon, r_lat, r_lon) <= 2000:
+                        is_near = True
+                        break
+            if is_near:
+                filtered_elements.append(el)
+        
         fuels = []
         charging_stations = []
         tolls = []
         lodgings = []
         
-        for el in elements:
+        for el in filtered_elements:
             tags = el.get("tags", {})
-            lat = el.get("lat")
-            lon = el.get("lon")
-            name = tags.get("name") or tags.get("operator") or tags.get("brand") or "Sin Nombre"
+            center = el.get("center")
+            lat = el.get("lat") or (center.get("lat") if isinstance(center, dict) else None)
+            lon = el.get("lon") or (center.get("lon") if isinstance(center, dict) else None)
             
+            name = tags.get("name") or tags.get("operator") or tags.get("brand") or "Sin Nombre"
             poi = {"name": name, "lat": lat, "lon": lon}
             
             if tags.get("amenity") == "fuel":

@@ -502,6 +502,7 @@ document.getElementById('map-modal').addEventListener('click', (e) => {
 function populatePOILayers(data) {
     if (data.fuels) {
         data.fuels.forEach(p => {
+            if (!p || p.lat === null || p.lon === null || isNaN(p.lat) || isNaN(p.lon)) return;
             const marker = L.marker([p.lat, p.lon], { icon: fuelIcon })
                 .bindPopup(`<b>⛽ Gasolinera:</b> ${p.name}`);
             poiLayers.fuels.addLayer(marker);
@@ -509,6 +510,7 @@ function populatePOILayers(data) {
     }
     if (data.charging_stations) {
         data.charging_stations.forEach(p => {
+            if (!p || p.lat === null || p.lon === null || isNaN(p.lat) || isNaN(p.lon)) return;
             const marker = L.marker([p.lat, p.lon], { icon: chargingIcon })
                 .bindPopup(`<b>⚡ Estación Eléctrica:</b> ${p.name}`);
             poiLayers.chargings.addLayer(marker);
@@ -516,6 +518,7 @@ function populatePOILayers(data) {
     }
     if (data.tolls) {
         data.tolls.forEach(p => {
+            if (!p || p.lat === null || p.lon === null || isNaN(p.lat) || isNaN(p.lon)) return;
             const marker = L.marker([p.lat, p.lon], { icon: tollIcon })
                 .bindPopup(`<b>🪙 Peaje:</b> ${p.name}`);
             poiLayers.tolls.addLayer(marker);
@@ -523,6 +526,7 @@ function populatePOILayers(data) {
     }
     if (data.lodgings) {
         data.lodgings.forEach(p => {
+            if (!p || p.lat === null || p.lon === null || isNaN(p.lat) || isNaN(p.lon)) return;
             const marker = L.marker([p.lat, p.lon], { icon: lodgingIcon })
                 .bindPopup(`<b>🏨 Hospedaje/Descanso:</b> ${p.name}`);
             poiLayers.lodgings.addLayer(marker);
