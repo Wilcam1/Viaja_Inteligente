@@ -72,12 +72,28 @@ const destinoInput = document.getElementById('destino');
 const kmInput = document.getElementById('km');
 const distLoading = document.getElementById('dist_loading');
 
+// Set para almacenar municipios válidos y detectar autocompletado rápido
+const validMunicipios = new Set();
+let lastCalculatedOrigin = "";
+let lastCalculatedDestination = "";
+let errorTimeout = null;
+
 async function autoCalculateDistance() {
     const origin = origenInput.value.trim();
     const destination = destinoInput.value.trim();
 
     if (origin && destination) {
+        // Evitar recálculos si el origen y destino no han cambiado
+        if (origin === lastCalculatedOrigin && destination === lastCalculatedDestination) {
+            return;
+        }
+
+        // Limpiar cualquier estado de error anterior
+        if (errorTimeout) clearTimeout(errorTimeout);
         distLoading.style.display = 'inline';
+        distLoading.style.color = 'var(--primary)';
+        distLoading.textContent = '(Calculando...)';
+
         try {
             const response = await fetch('/calculate_distance', {
                 method: 'POST',
@@ -89,20 +105,51 @@ async function autoCalculateDistance() {
                 const data = await response.json();
                 kmInput.value = Math.round(data.distance_km);
                 updateMap(data.origin, data.destination, data.origin_coords, data.destination_coords, data.route_geometry);
+                
+                // Guardar estado exitoso
+                lastCalculatedOrigin = origin;
+                lastCalculatedDestination = destination;
+                distLoading.style.display = 'none';
             } else {
                 const errorData = await response.json();
                 console.warn("No se pudo calcular la distancia automáticamente:", errorData.error);
+                showDistanceError(errorData.error || "No encontrado");
             }
         } catch (error) {
             console.error("Error al conectar con la API de distancia:", error);
-        } finally {
-            distLoading.style.display = 'none';
+            showDistanceError("Error de conexión");
         }
     }
 }
 
+function showDistanceError(message) {
+    distLoading.style.display = 'inline';
+    distLoading.style.color = '#ff5252';
+    distLoading.textContent = `(${message})`;
+    errorTimeout = setTimeout(() => {
+        distLoading.style.display = 'none';
+        distLoading.style.color = 'var(--primary)';
+        distLoading.textContent = '(Calculando...)';
+    }, 5000);
+}
+
+// Escuchar evento 'input' para detectar cuando se selecciona un elemento del datalist
+function handleInputEvent(e) {
+    const val = e.target.value.trim();
+    // Si el valor ingresado es un municipio completo de la lista, calculamos de inmediato
+    if (validMunicipios.has(val)) {
+        autoCalculateDistance();
+    }
+}
+
+origenInput.addEventListener('input', handleInputEvent);
+destinoInput.addEventListener('input', handleInputEvent);
+
+// Escuchar cambios de foco, enter y cambios manuales como respaldo
 origenInput.addEventListener('blur', autoCalculateDistance);
 destinoInput.addEventListener('blur', autoCalculateDistance);
+origenInput.addEventListener('change', autoCalculateDistance);
+destinoInput.addEventListener('change', autoCalculateDistance);
 origenInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') autoCalculateDistance(); });
 destinoInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') autoCalculateDistance(); });
 
@@ -114,11 +161,14 @@ async function loadMunicipios() {
             const departments = await response.json();
             const datalist = document.getElementById('municipios-list');
             datalist.innerHTML = '';
+            validMunicipios.clear();
             
             departments.forEach(dept => {
                 dept.ciudades.forEach(ciudad => {
+                    const value = `${ciudad}, ${dept.departamento}`;
+                    validMunicipios.add(value);
                     const option = document.createElement('option');
-                    option.value = `${ciudad}, ${dept.departamento}`;
+                    option.value = value;
                     datalist.appendChild(option);
                 });
             });
