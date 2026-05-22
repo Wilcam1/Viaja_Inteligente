@@ -397,6 +397,12 @@ function updateMap(origin, destination, originCoords, destinationCoords, routeGe
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
             maxZoom: 19
         }).addTo(map);
+
+        // Crear ResizeObserver para solucionar de raíz cualquier desajuste de tamaño o área gris
+        const resizeObserver = new ResizeObserver(() => {
+            if (map) map.invalidateSize();
+        });
+        resizeObserver.observe(document.getElementById('map'));
     } else {
         // Limpiar trazados anteriores
         if (routeLayer) map.removeLayer(routeLayer);
@@ -447,6 +453,12 @@ function openModalMap() {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
             maxZoom: 19
         }).addTo(modalMap);
+
+        // Crear ResizeObserver para el mapa del modal
+        const modalResizeObserver = new ResizeObserver(() => {
+            if (modalMap) modalMap.invalidateSize();
+        });
+        modalResizeObserver.observe(document.getElementById('modal-map'));
     } else {
         if (modalRouteLayer) modalMap.removeLayer(modalRouteLayer);
         if (modalOriginMarker) modalMap.removeLayer(modalOriginMarker);
