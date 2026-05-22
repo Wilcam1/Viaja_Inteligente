@@ -334,10 +334,57 @@ let originMarker = null;
 let destinationMarker = null;
 let currentRouteData = null; // Guardar datos para el modal ampliado
 
+// Capas y control de Puntos de Interés (POI)
+let loadedPOIs = null;
+const poiLayers = {
+    fuels: L.layerGroup(),
+    chargings: L.layerGroup(),
+    tolls: L.layerGroup(),
+    lodgings: L.layerGroup()
+};
+
+const fuelIcon = L.divIcon({
+    html: `<div class="poi-marker marker-fuel">⛽</div>`,
+    className: 'custom-poi-marker',
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
+});
+
+const chargingIcon = L.divIcon({
+    html: `<div class="poi-marker marker-charging">⚡</div>`,
+    className: 'custom-poi-marker',
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
+});
+
+const tollIcon = L.divIcon({
+    html: `<div class="poi-marker marker-toll">🪙</div>`,
+    className: 'custom-poi-marker',
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
+});
+
+const lodgingIcon = L.divIcon({
+    html: `<div class="poi-marker marker-lodging">🏨</div>`,
+    className: 'custom-poi-marker',
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
+});
+
 function updateMap(origin, destination, originCoords, destinationCoords, routeGeometry) {
     const mapSection = document.getElementById('map-section');
     mapSection.style.display = 'flex';
     document.querySelector('.container').classList.add('has-map');
+
+    // Resetear filtros e info de POI para la nueva ruta
+    loadedPOIs = null;
+    document.querySelectorAll('.poi-filters input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+        cb.closest('.poi-toggle').classList.remove('active');
+    });
+    for (let key in poiLayers) {
+        poiLayers[key].clearLayers();
+    }
 
     // Guardar los datos actuales del mapa
     currentRouteData = { origin, destination, originCoords, destinationCoords, routeGeometry };
@@ -421,6 +468,13 @@ function openModalMap() {
         }
     }).addTo(modalMap);
 
+    // Agregar marcadores de POI activos al modalMap
+    document.querySelectorAll('.poi-filters input[type="checkbox"]').forEach(checkbox => {
+        if (checkbox.checked) {
+            poiLayers[checkbox.value].addTo(modalMap);
+        }
+    });
+
     // Marcadores en modal con iconos personalizados
     modalOriginMarker = L.marker(originCoords, { icon: originIcon })
         .bindPopup(`<b>Origen:</b> ${origin}`)
@@ -442,4 +496,92 @@ document.getElementById('map-modal').addEventListener('click', (e) => {
     if (e.target.id === 'map-modal') {
         document.getElementById('map-modal').style.display = 'none';
     }
+});
+
+// Poblar las capas de Leaflet con los datos de POIs
+function populatePOILayers(data) {
+    if (data.fuels) {
+        data.fuels.forEach(p => {
+            const marker = L.marker([p.lat, p.lon], { icon: fuelIcon })
+                .bindPopup(`<b>⛽ Gasolinera:</b> ${p.name}`);
+            poiLayers.fuels.addLayer(marker);
+        });
+    }
+    if (data.charging_stations) {
+        data.charging_stations.forEach(p => {
+            const marker = L.marker([p.lat, p.lon], { icon: chargingIcon })
+                .bindPopup(`<b>⚡ Estación Eléctrica:</b> ${p.name}`);
+            poiLayers.chargings.addLayer(marker);
+        });
+    }
+    if (data.tolls) {
+        data.tolls.forEach(p => {
+            const marker = L.marker([p.lat, p.lon], { icon: tollIcon })
+                .bindPopup(`<b>🪙 Peaje:</b> ${p.name}`);
+            poiLayers.tolls.addLayer(marker);
+        });
+    }
+    if (data.lodgings) {
+        data.lodgings.forEach(p => {
+            const marker = L.marker([p.lat, p.lon], { icon: lodgingIcon })
+                .bindPopup(`<b>🏨 Hospedaje/Descanso:</b> ${p.name}`);
+            poiLayers.lodgings.addLayer(marker);
+        });
+    }
+}
+
+// Consultar los POIs cercanos a la ruta en el backend
+async function fetchPOIs() {
+    if (!currentRouteData || !currentRouteData.routeGeometry) return;
+    
+    const filtersContainer = document.querySelector('.poi-filters');
+    filtersContainer.style.opacity = '0.5';
+    filtersContainer.style.pointerEvents = 'none';
+    
+    try {
+        const response = await fetch('/get_pois', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ route_geometry: currentRouteData.routeGeometry })
+        });
+        
+        if (!response.ok) throw new Error("Error al obtener puntos de interés");
+        
+        const data = await response.json();
+        loadedPOIs = data;
+        populatePOILayers(data);
+    } catch (err) {
+        console.error(err);
+        alert("⚠️ No se pudieron cargar los puntos de interés de OpenStreetMap.");
+        // Desmarcar todos en caso de error
+        document.querySelectorAll('.poi-filters input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+            cb.closest('.poi-toggle').classList.remove('active');
+        });
+    } finally {
+        filtersContainer.style.opacity = '1';
+        filtersContainer.style.pointerEvents = 'auto';
+    }
+}
+
+// Event listeners para los checkboxes de POIs
+document.querySelectorAll('.poi-filters input[type="checkbox"]').forEach(checkbox => {
+    checkbox.addEventListener('change', async (e) => {
+        const cb = e.target;
+        const label = cb.closest('.poi-toggle');
+        const type = cb.value;
+        
+        if (cb.checked) {
+            label.classList.add('active');
+            if (!loadedPOIs) {
+                await fetchPOIs();
+            }
+            if (map) poiLayers[type].addTo(map);
+            if (modalMap) poiLayers[type].addTo(modalMap);
+        } else {
+            label.classList.remove('active');
+            if (map) map.removeLayer(poiLayers[type]);
+            if (modalMap) modalMap.removeLayer(poiLayers[type]);
+        }
+    });
 });

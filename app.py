@@ -228,5 +228,111 @@ def predict():
         print(f"[ERROR] Error en prediccion: {traceback.format_exc()}")
         return jsonify({"error": str(e)}), 400
 
+def sample_coordinates(coords, max_points=35):
+    if len(coords) <= max_points:
+        return coords
+    indices = np.linspace(0, len(coords) - 1, max_points, dtype=int)
+    seen = set()
+    sampled = []
+    for idx in indices:
+        pt = (coords[idx][0], coords[idx][1])
+        if pt not in seen:
+            seen.add(pt)
+            sampled.append(coords[idx])
+    return sampled
+
+@app.route('/get_pois', methods=['POST'])
+def get_pois():
+    try:
+        data = request.json
+        route_geometry = data.get('route_geometry')
+        if not route_geometry or 'coordinates' not in route_geometry:
+            return jsonify({"error": "Geometria de ruta no valida"}), 400
+            
+        coords = route_geometry['coordinates']
+        sampled_coords = sample_coordinates(coords, max_points=35)
+        
+        if not sampled_coords:
+            return jsonify({"error": "No hay coordenadas en la ruta"}), 400
+            
+        # Formatear coordenadas para Overpass QL (lat,lon)
+        coord_string = ", ".join(f"{c[1]},{c[0]}" for c in sampled_coords)
+        
+        query = f"""[out:json][timeout:15];
+(
+  node["amenity"="fuel"](around:2000,{coord_string});
+  node["amenity"="charging_station"](around:2000,{coord_string});
+  node["barrier"="toll_booth"](around:2000,{coord_string});
+  node["tourism"~"hotel|motel|hostel"](around:2000,{coord_string});
+  node["highway"="rest_area"](around:2000,{coord_string});
+);
+out body;"""
+
+        servers = [
+            "https://lz4.overpass-api.de/api/interpreter",
+            "https://overpass-api.de/api/interpreter",
+            "https://z.overpass-api.de/api/interpreter",
+            "https://overpass.osm.ch/api/interpreter"
+        ]
+        
+        post_data = urllib.parse.urlencode({"data": query}).encode("utf-8")
+        
+        elements = []
+        success = False
+        last_err = ""
+        for server in servers:
+            req = urllib.request.Request(
+                server,
+                data=post_data,
+                headers={"User-Agent": "FuelAICalculator/1.0 (wilson.rios.project@gmail.com)"},
+                method="POST"
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=10) as res:
+                    res_data = json.loads(res.read().decode("utf-8"))
+                    elements = res_data.get("elements", [])
+                    success = True
+                    break
+            except Exception as e:
+                print(f"[WARN] Error en servidor Overpass {server}: {e}")
+                last_err = str(e)
+                
+        if not success:
+            return jsonify({"error": f"Error al conectar con los servidores de OpenStreetMap: {last_err}"}), 503
+            
+        fuels = []
+        charging_stations = []
+        tolls = []
+        lodgings = []
+        
+        for el in elements:
+            tags = el.get("tags", {})
+            lat = el.get("lat")
+            lon = el.get("lon")
+            name = tags.get("name") or tags.get("operator") or tags.get("brand") or "Sin Nombre"
+            
+            poi = {"name": name, "lat": lat, "lon": lon}
+            
+            if tags.get("amenity") == "fuel":
+                fuels.append(poi)
+            elif tags.get("amenity") == "charging_station":
+                charging_stations.append(poi)
+            elif tags.get("barrier") == "toll_booth":
+                tolls.append(poi)
+            elif tags.get("tourism") in ["hotel", "motel", "hostel"] or tags.get("highway") == "rest_area":
+                lodgings.append(poi)
+                
+        return jsonify({
+            "fuels": fuels,
+            "charging_stations": charging_stations,
+            "tolls": tolls,
+            "lodgings": lodgings
+        })
+        
+    except Exception as e:
+        print(f"[ERROR] Error al obtener POIs: {traceback.format_exc()}")
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+
