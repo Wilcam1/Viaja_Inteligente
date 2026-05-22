@@ -2,12 +2,16 @@ document.getElementById('fuelForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const loading = document.querySelector('.loading');
-    const resultsArea = document.querySelector('.results-area');
+    const resultsArea = document.getElementById('results-area');
+    const waitingState = document.getElementById('waiting-state');
+    const submitBtn = document.querySelector('.submit-btn');
     const btnText = document.querySelector('.btn-text');
     
     loading.style.display = 'block';
     resultsArea.style.display = 'none';
-    btnText.style.opacity = '0';
+    waitingState.style.display = 'none';
+    if (btnText) btnText.style.opacity = '0';
+    submitBtn.disabled = true;
 
     const formData = {
         km: document.getElementById('km').value,
@@ -43,15 +47,73 @@ document.getElementById('fuelForm').addEventListener('submit', async (e) => {
         document.getElementById('res_ahorro').textContent = `$${Math.round(data.ahorro).toLocaleString()} (${data.porcentaje_ahorro}%)`;
         document.getElementById('res_modelo').textContent = `IA: ${data.modelo_usado}`;
         
+        // Estilizar clasificacion badge
+        const clasificacionBadge = document.getElementById('res_clasificacion');
+        if (data.clasificacion.toLowerCase() === "costoso") {
+            clasificacionBadge.style.background = "rgba(255, 82, 82, 0.08)";
+            clasificacionBadge.style.borderColor = "var(--danger)";
+            clasificacionBadge.style.color = "var(--danger)";
+        } else {
+            clasificacionBadge.style.background = "rgba(0, 230, 118, 0.08)";
+            clasificacionBadge.style.borderColor = "var(--primary)";
+            clasificacionBadge.style.color = "var(--primary)";
+        }
+
+        // Estilizar presupuesto badge
         const presBadge = document.getElementById('res_presupuesto');
         presBadge.textContent = data.cumple_presupuesto ? "DENTRO DEL PRESUPUESTO" : "FUERA DE PRESUPUESTO";
-        presBadge.style.background = data.cumple_presupuesto ? "var(--primary)" : "#ff5252";
+        if (data.cumple_presupuesto) {
+            presBadge.style.background = "rgba(0, 230, 118, 0.08)";
+            presBadge.style.borderColor = "var(--primary)";
+            presBadge.style.color = "var(--primary)";
+        } else {
+            presBadge.style.background = "rgba(255, 82, 82, 0.08)";
+            presBadge.style.borderColor = "var(--danger)";
+            presBadge.style.color = "var(--danger)";
+        }
+
+        // Costo visual progress bars
+        const costoActualVal = data.costo_actual;
+        const costoOptVal = data.costo_optimizado;
+        let costoActualPct = 100;
+        let costoOptPct = costoActualVal > 0 ? (costoOptVal / costoActualVal) * 100 : 0;
+        if (costoOptPct > 100) costoOptPct = 100;
+        
+        document.getElementById('bar_costo_actual').style.width = `${costoActualPct}%`;
+        document.getElementById('bar_costo_opt').style.width = `${costoOptPct}%`;
+        
+        // Tiempo visual progress bars
+        const timeActualMins = parseTimeToMinutes(data.tiempo_actual);
+        const timeOptMins = parseTimeToMinutes(data.tiempo_optimizado);
+        let timeActualPct = 0;
+        let timeOptPct = 0;
+        if (timeActualMins > 0 || timeOptMins > 0) {
+            const maxTime = Math.max(timeActualMins, timeOptMins);
+            timeActualPct = (timeActualMins / maxTime) * 100;
+            timeOptPct = (timeOptMins / maxTime) * 100;
+        }
+        document.getElementById('bar_tiempo_actual').style.width = `${timeActualPct}%`;
+        document.getElementById('bar_tiempo_opt').style.width = `${timeOptPct}%`;
+
+        // Presupuesto progress bar
+        const presupuestoVal = parseFloat(document.getElementById('presupuesto').value) || 1;
+        let budgetPct = (costoOptVal / presupuestoVal) * 100;
+        let budgetBarWidth = Math.min(budgetPct, 100);
+        document.getElementById('budget_percentage').textContent = `${Math.round(budgetPct)}%`;
+        const budgetBar = document.getElementById('bar_budget_progress');
+        budgetBar.style.width = `${budgetBarWidth}%`;
+        if (budgetPct > 100) {
+            budgetBar.classList.add('budget-warning');
+        } else {
+            budgetBar.classList.remove('budget-warning');
+        }
 
         const recList = document.getElementById('res_recomendaciones');
         recList.innerHTML = '';
-        data.recomendaciones.forEach(rec => {
+        data.recomendaciones.forEach((rec, idx) => {
             const li = document.createElement('li');
             li.textContent = rec;
+            li.style.animationDelay = `${idx * 0.1}s`;
             recList.appendChild(li);
         });
 
@@ -60,11 +122,66 @@ document.getElementById('fuelForm').addEventListener('submit', async (e) => {
     } catch (err) {
         console.error("Error detallado:", err);
         alert("⚠️ Error: " + err.message);
+        waitingState.style.display = 'flex';
     } finally {
         loading.style.display = 'none';
-        btnText.style.opacity = '1';
+        if (btnText) btnText.style.opacity = '1';
+        submitBtn.disabled = false;
     }
 });
+
+// Helper parser para las cadenas de tiempo
+function parseTimeToMinutes(timeStr) {
+    if (!timeStr || timeStr === "N/A" || timeStr === "-") return 0;
+    let totalMinutes = 0;
+    const hrMatch = timeStr.match(/(\d+)\s*h/);
+    const minMatch = timeStr.match(/(\d+)\s*min/);
+    if (hrMatch) totalMinutes += parseInt(hrMatch[1]) * 60;
+    if (minMatch) totalMinutes += parseInt(minMatch[1]);
+    return totalMinutes;
+}
+
+// Sincronización bidireccional entre sliders e inputs
+function setupSliderSync(inputId, sliderId) {
+    const input = document.getElementById(inputId);
+    const slider = document.getElementById(sliderId);
+    
+    if (input && slider) {
+        slider.addEventListener('input', () => {
+            input.value = slider.value;
+        });
+        
+        input.addEventListener('input', () => {
+            let val = parseFloat(input.value);
+            const min = parseFloat(slider.min);
+            const max = parseFloat(slider.max);
+            if (!isNaN(val)) {
+                if (val < min) val = min;
+                if (val > max) val = max;
+                slider.value = val;
+            }
+        });
+        
+        input.addEventListener('blur', () => {
+            let val = parseFloat(input.value);
+            const min = parseFloat(slider.min);
+            const max = parseFloat(slider.max);
+            if (isNaN(val) || val < min) {
+                input.value = min;
+                slider.value = min;
+            } else if (val > max) {
+                input.value = max;
+                slider.value = max;
+            }
+        });
+    }
+}
+
+// Inicializar sincronizaciones
+setupSliderSync('velocidad', 'velocidad_slider');
+setupSliderSync('psi_llantas', 'psi_llantas_slider');
+setupSliderSync('peso_vehiculo', 'peso_vehiculo_slider');
+setupSliderSync('calibre_llantas', 'calibre_llantas_slider');
 
 // Calcular distancia automáticamente al ingresar origen y destino
 const origenInput = document.getElementById('origen');
@@ -220,6 +337,7 @@ let currentRouteData = null; // Guardar datos para el modal ampliado
 function updateMap(origin, destination, originCoords, destinationCoords, routeGeometry) {
     const mapSection = document.getElementById('map-section');
     mapSection.style.display = 'flex';
+    document.querySelector('.container').classList.add('has-map');
 
     // Guardar los datos actuales del mapa
     currentRouteData = { origin, destination, originCoords, destinationCoords, routeGeometry };
@@ -239,11 +357,6 @@ function updateMap(origin, destination, originCoords, destinationCoords, routeGe
         if (destinationMarker) map.removeLayer(destinationMarker);
     }
 
-    // Invalidar tamaño para renderizado correcto en contenedor dinámico
-    setTimeout(() => {
-        map.invalidateSize();
-    }, 100);
-
     // Dibujar ruta verde neón
     routeLayer = L.geoJSON(routeGeometry, {
         style: {
@@ -262,8 +375,11 @@ function updateMap(origin, destination, originCoords, destinationCoords, routeGe
         .bindPopup(`<b>Destino:</b> ${destination}`)
         .addTo(map);
 
-    // Ajustar zoom para enfocar todo el trayecto
-    map.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
+    // Invalidar tamaño y ajustar zoom después de que termine la transición de la cuadrícula
+    setTimeout(() => {
+        map.invalidateSize();
+        map.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
+    }, 450);
 }
 
 // Variables para el mapa ampliado (modal)

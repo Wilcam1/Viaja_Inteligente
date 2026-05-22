@@ -3,168 +3,296 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Viaja Inteligente - Optimización de Consumo</title>
+    <title>Viaja Inteligente - Optimización de Consumo con IA</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
+    <!-- Outfit para lectura / Space Grotesk para títulos y badges -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
     <!-- Leaflet.js para el mapa de ruta -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
+    <!-- Orbes ambientales de luz de fondo -->
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    <div class="glow-orb orb-3"></div>
+
     <div class="container">
         <!-- Panel de Entrada -->
-        <div class="glass-card">
+        <div class="glass-card fade-in-up">
             <div class="logo-container">
                 <div class="logo-icon-wrapper">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="logo-svg">
-                        <!-- Rays of light -->
-                        <path d="M12 2v2M6.34 6.34l1.42 1.42M17.66 6.34l-1.42 1.42M3.5 12h2M18.5 12h2" stroke="#00E676" stroke-width="2" stroke-linecap="round" />
-                        <!-- Bulb contour & fill -->
-                        <path d="M12 6a6 6 0 0 0-6 6c0 2.2 1.2 4.1 3 5.1v2.3a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-2.3c1.8-1 3-2.9 3-5.1a6 6 0 0 0-6-6z" fill="rgba(0, 230, 118, 0.15)" stroke="#00E676" stroke-width="2" stroke-linejoin="round" />
-                        <!-- Internal plant filament -->
-                        <path d="M12 17v-6" stroke="#00E676" stroke-width="2" stroke-linecap="round" />
-                        <path d="M12 14c-1.5-1-2.5-1.5-2.5-2.5 0-1.5 1.5-1.5 2.5.5M12 13c1.5-1 2.5-1.5 2.5-2.5 0-1.5-1.5-1.5-2.5.5" fill="#00E676" stroke="#00E676" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" />
-                        <!-- Base of the bulb (screw) -->
-                        <path d="M9.5 21.5h5" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round" />
-                        <path d="M10.5 23h3" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round" />
+                        <path d="M12 2v2M6.34 6.34l1.42 1.42M17.66 6.34l-1.42 1.42M3.5 12h2M18.5 12h2" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" />
+                        <path d="M12 6a6 6 0 0 0-6 6c0 2.2 1.2 4.1 3 5.1v2.3a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-2.3c1.8-1 3-2.9 3-5.1a6 6 0 0 0-6-6z" fill="rgba(0, 230, 118, 0.1)" stroke="var(--primary)" stroke-width="2" stroke-linejoin="round" />
+                        <path d="M12 17v-6" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" />
+                        <path d="M12 14c-1.5-1-2.5-1.5-2.5-2.5 0-1.5 1.5-1.5 2.5.5M12 13c1.5-1 2.5-1.5 2.5-2.5 0-1.5-1.5-1.5-2.5.5" fill="var(--primary)" stroke="var(--primary)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M9.5 21.5h5" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" />
+                        <path d="M10.5 23h3" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" />
                     </svg>
                 </div>
                 <div class="logo-text">
                     <h1 class="logo-title">Viaja Inteligente</h1>
-                    <p class="logo-subtitle">Planifica mejor, disfruta más.</p>
+                    <p class="logo-subtitle">Planifica mejor, consume menos.</p>
                 </div>
             </div>
             
             <form id="fuelForm">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-grid-2">
                     <div class="form-group">
-                        <label for="origen">Origen (Colombia)</label>
-                        <input type="text" id="origen" placeholder="Ej. Bogotá" list="municipios-list" autocomplete="off">
+                        <label for="origen">
+                            <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                            Origen (Colombia)
+                        </label>
+                        <div class="input-wrapper">
+                            <input type="text" id="origen" placeholder="Ej. Bogotá" list="municipios-list" autocomplete="off" required>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label for="destino">Destino (Colombia)</label>
-                        <input type="text" id="destino" placeholder="Ej. Medellín" list="municipios-list" autocomplete="off">
+                        <label for="destino">
+                            <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+                            Destino (Colombia)
+                        </label>
+                        <div class="input-wrapper">
+                            <input type="text" id="destino" placeholder="Ej. Medellín" list="municipios-list" autocomplete="off" required>
+                        </div>
                     </div>
                 </div>
                 <datalist id="municipios-list"></datalist>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div class="form-group" style="position: relative;">
-                        <label for="km">Distancia (KM) <span id="dist_loading" style="color: var(--primary); display: none; font-size: 0.8rem; font-weight: normal;">(Calculando...)</span></label>
-                        <input type="number" id="km" required placeholder="100">
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label for="km">
+                            <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 3 4 4-4 4"/><path d="M21 7H3"/><path d="m7 21-4-4 4-4"/><path d="M3 17h18"/></svg>
+                            Distancia (KM) <span id="dist_loading" class="label-badge-loading">(Calculando...)</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <input type="number" id="km" required placeholder="100">
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label for="cilindraje">Cilindraje</label>
-                        <input type="number" step="0.1" id="cilindraje" required placeholder="1.6">
+                        <label for="cilindraje">
+                            <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                            Cilindraje (L)
+                        </label>
+                        <div class="input-wrapper">
+                            <input type="number" step="0.1" id="cilindraje" required placeholder="1.6" min="0.5" max="8.0" value="1.6">
+                        </div>
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-grid-2">
                     <div class="form-group">
-                        <label for="precio_combustible">Precio Combustible</label>
-                        <input type="number" id="precio_combustible" required placeholder="15000">
+                        <label for="precio_combustible">
+                            <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            Precio Combustible ($/gal)
+                        </label>
+                        <div class="input-wrapper">
+                            <input type="number" id="precio_combustible" required placeholder="15000" min="1000" max="50000" value="15000">
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label for="velocidad">Velocidad (km/h)</label>
-                        <input type="number" id="velocidad" required placeholder="90">
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div class="form-group">
-                        <label for="peso_vehiculo">Peso Vehículo (kg)</label>
-                        <input type="number" id="peso_vehiculo" required placeholder="1200">
-                    </div>
-                    <div class="form-group">
-                        <label for="calibre_llantas">Calibre Llantas</label>
-                        <input type="number" id="calibre_llantas" required placeholder="205">
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div class="form-group">
-                        <label for="psi_llantas">Presión Llantas (PSI)</label>
-                        <input type="number" id="psi_llantas" required placeholder="32">
-                    </div>
-                    <div class="form-group">
-                        <label for="presupuesto">Presupuesto viaje</label>
-                        <input type="number" id="presupuesto" required placeholder="50000">
+                        <label for="presupuesto">
+                            <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                            Presupuesto viaje ($)
+                        </label>
+                        <div class="input-wrapper">
+                            <input type="number" id="presupuesto" required placeholder="50000" min="1000" max="5000000" value="100000">
+                        </div>
                     </div>
                 </div>
 
-                <button type="submit">
+                <!-- Sliders Interactivos para simulación -->
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <div class="slider-label-row">
+                            <label for="velocidad">
+                                <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
+                                Velocidad
+                            </label>
+                            <div class="slider-input-container">
+                                <input type="number" id="velocidad" required min="30" max="150" value="90" class="slider-number-box">
+                                <span class="unit">km/h</span>
+                            </div>
+                        </div>
+                        <input type="range" id="velocidad_slider" min="30" max="150" value="90" step="5" class="range-slider">
+                    </div>
+                    <div class="form-group">
+                        <div class="slider-label-row">
+                            <label for="psi_llantas">
+                                <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 12m-6 0a6 6 0 1 0 12 0a6 6 0 1 0 -12 0"/><path d="M12 8v4"/></svg>
+                                Presión de Llantas
+                            </label>
+                            <div class="slider-input-container">
+                                <input type="number" id="psi_llantas" required min="20" max="50" value="32" class="slider-number-box">
+                                <span class="unit">PSI</span>
+                            </div>
+                        </div>
+                        <input type="range" id="psi_llantas_slider" min="20" max="50" value="32" step="1" class="range-slider">
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <div class="slider-label-row">
+                            <label for="peso_vehiculo">
+                                <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="12" x="2" y="7" rx="2" ry="2"/><path d="M5 19v2"/><path d="M19 19v2"/><path d="M12 7V3"/><path d="M9 3h6"/></svg>
+                                Peso Vehículo
+                            </label>
+                            <div class="slider-input-container">
+                                <input type="number" id="peso_vehiculo" required min="600" max="3000" value="1200" class="slider-number-box">
+                                <span class="unit">kg</span>
+                            </div>
+                        </div>
+                        <input type="range" id="peso_vehiculo_slider" min="600" max="3000" value="1200" step="50" class="range-slider">
+                    </div>
+                    <div class="form-group">
+                        <div class="slider-label-row">
+                            <label for="calibre_llantas">
+                                <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                                Ancho Llantas
+                            </label>
+                            <div class="slider-input-container">
+                                <input type="number" id="calibre_llantas" required min="145" max="315" value="205" class="slider-number-box">
+                                <span class="unit">mm</span>
+                            </div>
+                        </div>
+                        <input type="range" id="calibre_llantas_slider" min="145" max="315" value="205" step="10" class="range-slider">
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <span class="btn-shine"></span>
                     <span class="btn-text">Analizar Viaje</span>
                 </button>
             </form>
         </div>
 
         <!-- Panel de Resultados -->
-        <div class="glass-card">
+        <div class="glass-card fade-in-up" id="results-card" style="animation-delay: 0.15s;">
+            <!-- Spinner de Carga -->
             <div class="loading">
                 <div class="spinner"></div>
-                <p>Nuestra IA está calculando...</p>
+                <p>Nuestra IA está calculando la ruta óptima...</p>
             </div>
 
-            <div class="results-area">
-                <h2>Resultados</h2>
+            <!-- Estado Inicial en Espera -->
+            <div class="waiting-state" id="waiting-state">
+                <div class="waiting-icon-wrapper">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="floating-svg">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 6v6l4 2"/>
+                    </svg>
+                </div>
+                <h3>Esperando Simulación</h3>
+                <p>Ingresa los municipios de origen/destino y ajusta los parámetros de tu auto. Haremos un análisis de eficiencia basado en algoritmos predictivos.</p>
+            </div>
+
+            <!-- Resultados del Análisis -->
+            <div class="results-area" id="results-area" style="display: none;">
+                <div class="results-header">
+                    <h2>Resultados del Análisis</h2>
+                    <span class="ia-version" id="res_modelo">IA: XGBoost</span>
+                </div>
                 
-                <div class="result-item">
+                <div class="badge-row">
                     <span class="badge" id="res_clasificacion">Económico</span>
-                    <span id="res_modelo" style="font-size: 0.7rem; color: var(--text-muted); float: right;"></span>
+                    <span class="badge" id="res_presupuesto">Dentro de Presupuesto</span>
                 </div>
 
-                <div class="result-item">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div>
-                            <label>Costo Estimado Actual</label>
-                            <span class="result-val" id="res_costo_actual">$0</span>
+                <!-- Comparador de Costo (Visual) -->
+                <div class="comparison-section">
+                    <h3 class="section-title">Análisis de Costo de Viaje</h3>
+                    
+                    <div class="comparison-item">
+                        <div class="comparison-label">
+                            <span>Costo de Viaje Actual</span>
+                            <span class="val-number" id="res_costo_actual">$0</span>
                         </div>
-                        <div>
-                            <label>Tiempo Est. Actual</label>
-                            <span class="result-val" id="res_tiempo_actual">-</span>
+                        <div class="progress-container">
+                            <div class="progress-bar bar-actual" id="bar_costo_actual" style="width: 0%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="comparison-item">
+                        <div class="comparison-label">
+                            <span class="highlight-label">Costo Sugerido Optimizado</span>
+                            <span class="val-number highlight-val" id="res_costo_opt">$0</span>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar bar-optimized" id="bar_costo_opt" style="width: 0%;"></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="result-item">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div>
-                            <label>Costo Optimizado</label>
-                            <span class="result-val" style="color: var(--primary);" id="res_costo_opt">$0</span>
+                <!-- Comparador de Tiempo (Visual) -->
+                <div class="comparison-section">
+                    <h3 class="section-title">Tiempo Estimado de Viaje</h3>
+                    
+                    <div class="comparison-item">
+                        <div class="comparison-label">
+                            <span>Tiempo de Viaje Actual</span>
+                            <span class="val-number-time" id="res_tiempo_actual">-</span>
                         </div>
-                        <div>
-                            <label>Tiempo Est. Optimizado</label>
-                            <span class="result-val" style="color: var(--primary);" id="res_tiempo_opt">-</span>
+                        <div class="progress-container">
+                            <div class="progress-bar bar-time-actual" id="bar_tiempo_actual" style="width: 0%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="comparison-item">
+                        <div class="comparison-label">
+                            <span class="highlight-label">Tiempo Optimizado</span>
+                            <span class="val-number-time highlight-val" id="res_tiempo_opt">-</span>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar bar-time-optimized" id="bar_tiempo_opt" style="width: 0%;"></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="result-item">
-                    <label>Ahorro Potencial</label>
-                    <span class="result-val" id="res_ahorro">$0</span>
+                <!-- Tarjeta de Ahorro y Eficiencia -->
+                <div class="saving-card">
+                    <div class="saving-info">
+                        <span class="saving-label">Ahorro Potencial</span>
+                        <span class="saving-val" id="res_ahorro">$0 (0%)</span>
+                    </div>
+                    <div class="saving-glow-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; color: var(--primary);">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                        </svg>
+                    </div>
                 </div>
 
-                <div class="result-item" style="border: none;">
-                    <span class="badge" id="res_presupuesto">DENTRO DEL PRESUPUESTO</span>
+                <!-- Nivel de Uso de Presupuesto -->
+                <div class="budget-section">
+                    <div class="comparison-label">
+                        <span>Consumo de Presupuesto</span>
+                        <span class="budget-percentage" id="budget_percentage">0%</span>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar bar-budget" id="bar_budget_progress" style="width: 0%;"></div>
+                    </div>
                 </div>
 
-                <h3>Recomendaciones IA</h3>
-                <ul class="recommendations" id="res_recomendaciones">
-                </ul>
+                <div class="recommendations-container">
+                    <h3 class="section-title" style="margin-top: 1.5rem; margin-bottom: 0.8rem;">Recomendaciones del Piloto IA</h3>
+                    <ul class="recommendations" id="res_recomendaciones">
+                    </ul>
+                </div>
             </div>
         </div>
 
         <!-- Contenedor del Mapa (Tercera Tarjeta) -->
-        <div id="map-section" class="glass-card" style="display: none; flex-direction: column; position: relative;">
-            <h3 style="margin-bottom: 0.8rem; font-size: 1.2rem; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; width: 100%;">
-                <span style="display: flex; align-items: center; gap: 0.5rem;">🗺️ Recorrido Sugerido</span>
-                <span id="btn-maximize-map" role="button" style="cursor: pointer; color: var(--primary); font-size: 1.3rem; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s; padding: 6px; border-radius: 8px; width: 32px; height: 32px; border: 1px solid rgba(0, 230, 118, 0.2);" title="Ampliar mapa" onmouseover="this.style.transform='scale(1.15)'; this.style.background='rgba(0, 230, 118, 0.1)';" onmouseout="this.style.transform='scale(1)'; this.style.background='none';">
+        <div id="map-section" class="glass-card fade-in-up">
+            <h3 style="margin-bottom: 0.8rem; font-size: 1.2rem; font-family: 'Space Grotesk', sans-serif; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; width: 100%;">
+                <span style="display: flex; align-items: center; gap: 0.5rem; color: var(--text);">🗺️ Recorrido Sugerido por Colombia</span>
+                <span id="btn-maximize-map" role="button" class="btn-maximize" title="Ampliar mapa">
                     ⛶
                 </span>
             </h3>
-            <div id="map" style="height: 380px; border-radius: 16px; border: 1px solid var(--glass-border); z-index: 10;"></div>
+            <div id="map"></div>
         </div>
     </div>
 
@@ -172,10 +300,10 @@
     <div id="map-modal" class="modal">
         <div class="modal-content glass-card">
             <div class="modal-header">
-                <h3 style="font-size: 1.4rem; color: var(--text); margin: 0; display: flex; align-items: center; gap: 0.5rem;">🗺️ Recorrido Sugerido (Ampliado)</h3>
+                <h3 style="font-size: 1.4rem; font-family: 'Space Grotesk', sans-serif; color: var(--text); margin: 0; display: flex; align-items: center; gap: 0.5rem;">🗺️ Recorrido Sugerido (Ampliado)</h3>
                 <span class="close-modal" id="closeMapModal">&times;</span>
             </div>
-            <div id="modal-map" style="height: 500px; border-radius: 16px; border: 1px solid var(--glass-border); z-index: 10;"></div>
+            <div id="modal-map"></div>
         </div>
     </div>
 

@@ -35,6 +35,8 @@ def calcular_eficiencia(vel, psi, eficiencia_base, calibre=205):
     factor_vel = 1.0
     if vel > 80:
         factor_vel -= min((vel - 80) * 0.01, 0.40)
+    elif vel < 50:
+        factor_vel -= min((50 - vel) * 0.008, 0.25)
     
     # Penalización por presión de llantas
     factor_psi = 1.0
@@ -175,9 +177,15 @@ def predict():
         prediccion = modelo.predict(nuevo_norm)
         clasificacion = "Costoso" if prediccion[0] == 1 else "Económico"
 
-        velocidad_opt = 70 if velocidad > 100 else (velocidad * 0.85 if velocidad > 80 else velocidad)
+        if velocidad > 80:
+            velocidad_opt = 70 if velocidad > 100 else velocidad * 0.85
+        elif velocidad < 60:
+            velocidad_opt = 70
+        else:
+            velocidad_opt = velocidad
+
         psi_opt = max(psi_llantas, 34)
-        eficiencia_opt = calcular_eficiencia(velocidad_opt, psi_opt, eficiencia_base)
+        eficiencia_opt = calcular_eficiencia(velocidad_opt, psi_opt, eficiencia_base, calibre_llantas)
         costo_opt = (km / eficiencia_opt) * precio_combustible
 
         ahorro = costo_viaje - costo_opt
@@ -191,6 +199,8 @@ def predict():
         recomendaciones = []
         if velocidad > 80:
             recomendaciones.append(f"Bajar velocidad a {velocidad_opt:.0f} km/h ahorra considerablemente.")
+        elif velocidad < 60:
+            recomendaciones.append(f"Incrementar velocidad a {velocidad_opt:.0f} km/h optimiza el tiempo de viaje y la eficiencia del motor.")
         if psi_llantas < 32:
             recomendaciones.append(f"Ajustar presión a {psi_opt} PSI mejora el consumo.")
         if peso_vehiculo > 1500:

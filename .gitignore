@@ -21,3 +21,7 @@ __pycache__/
 
 # Local app data or logs
 *.log
+
+# Agent data
+.agents/
+
