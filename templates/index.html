@@ -328,6 +328,31 @@
                 <h3 style="font-size: 1.4rem; font-family: 'Space Grotesk', sans-serif; color: var(--text); margin: 0; display: flex; align-items: center; gap: 0.5rem;">🗺️ Recorrido Sugerido (Ampliado)</h3>
                 <span class="close-modal" id="closeMapModal">&times;</span>
             </div>
+            
+            <!-- Filtros de Puntos de Interés en el Modal -->
+            <div class="poi-filters modal-poi-filters">
+                <label class="poi-toggle" for="poi_gas_modal">
+                    <input type="checkbox" id="poi_gas_modal" value="fuels">
+                    <span class="poi-toggle-icon">⛽</span>
+                    <span class="poi-toggle-text">Gasolineras</span>
+                </label>
+                <label class="poi-toggle" for="poi_electric_modal">
+                    <input type="checkbox" id="poi_electric_modal" value="chargings">
+                    <span class="poi-toggle-icon">⚡</span>
+                    <span class="poi-toggle-text">Carga Eléctrica</span>
+                </label>
+                <label class="poi-toggle" for="poi_toll_modal">
+                    <input type="checkbox" id="poi_toll_modal" value="tolls">
+                    <span class="poi-toggle-icon">🪙</span>
+                    <span class="poi-toggle-text">Peajes</span>
+                </label>
+                <label class="poi-toggle" for="poi_lodging_modal">
+                    <input type="checkbox" id="poi_lodging_modal" value="lodgings">
+                    <span class="poi-toggle-icon">🏨</span>
+                    <span class="poi-toggle-text">Hoteles/Descanso</span>
+                </label>
+            </div>
+
             <div id="modal-map"></div>
         </div>
     </div>

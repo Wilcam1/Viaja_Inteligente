@@ -469,7 +469,7 @@ function openModalMap() {
     }).addTo(modalMap);
 
     // Agregar marcadores de POI activos al modalMap
-    document.querySelectorAll('.poi-filters input[type="checkbox"]').forEach(checkbox => {
+    document.querySelectorAll('#map-section .poi-filters input[type="checkbox"]').forEach(checkbox => {
         if (checkbox.checked) {
             poiLayers[checkbox.value].addTo(modalMap);
         }
@@ -568,22 +568,33 @@ async function fetchPOIs() {
     }
 }
 
-// Event listeners para los checkboxes de POIs
+// Event listeners para los checkboxes de POIs (sincronizados)
 document.querySelectorAll('.poi-filters input[type="checkbox"]').forEach(checkbox => {
     checkbox.addEventListener('change', async (e) => {
         const cb = e.target;
-        const label = cb.closest('.poi-toggle');
         const type = cb.value;
+        const isChecked = cb.checked;
         
-        if (cb.checked) {
-            label.classList.add('active');
+        // Sincronizar el estado del checkbox y del diseño activo de las etiquetas en ambos paneles
+        document.querySelectorAll(`.poi-filters input[value="${type}"]`).forEach(otherCb => {
+            otherCb.checked = isChecked;
+            const label = otherCb.closest('.poi-toggle');
+            if (label) {
+                if (isChecked) {
+                    label.classList.add('active');
+                } else {
+                    label.classList.remove('active');
+                }
+            }
+        });
+        
+        if (isChecked) {
             if (!loadedPOIs) {
                 await fetchPOIs();
             }
             if (map) poiLayers[type].addTo(map);
             if (modalMap) poiLayers[type].addTo(modalMap);
         } else {
-            label.classList.remove('active');
             if (map) map.removeLayer(poiLayers[type]);
             if (modalMap) modalMap.removeLayer(poiLayers[type]);
         }
