@@ -161,17 +161,18 @@ h1, h2, h3, h4, .logo-title, .section-title, .ia-version {
 .project-description {
     font-size: 0.88rem;
     line-height: 1.6;
-    color: var(--text-muted);
+    color: rgba(248, 250, 252, 0.75);
     margin-bottom: 1.8rem;
     background: rgba(255, 255, 255, 0.015);
     border: 1px solid rgba(255, 255, 255, 0.03);
+    border-left: 3px solid var(--warning);
     padding: 1rem 1.2rem;
-    border-radius: 16px;
+    border-radius: 12px;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 .project-description strong {
-    color: var(--text);
-    font-weight: 500;
+    color: var(--warning);
+    font-weight: 600;
 }
 
 /* Grillas de Formulario */
