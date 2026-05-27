@@ -10,6 +10,8 @@
 * **🤖 Clasificación por IA**: Un modelo predice en milisegundos si tu viaje será **"Económico"** o **"Costoso"** usando banderas de color dinámicas (verde/rojo).
 * **💡 Recomendaciones de Optimización**: El sistema analiza cilindraje, peso, velocidad promedio, presión y calibre de llantas para sugerir ajustes óptimos y calcular el ahorro de dinero y tiempo.
 * **📍 Puntos de Interés (POIs)**: Ubica estaciones de servicio, peajes y paradas de descanso a menos de 2 km de la ruta mediante Overpass API.
+* **🛰️ Geolocalización en Tiempo Real**: Detecta la ubicación GPS/IP del usuario en tiempo real con un botón en el mapa, representa la posición actual con un marcador azul pulsante animado por CSS, y permite usarla como origen directo para el trazado de la ruta mediante geocodificación inversa dinámica.
+* **💬 Compartir en WhatsApp**: Comparte de manera instantánea el resumen del trayecto, el veredicto del modelo de IA y las sugerencias de optimización con cualquier contacto.
 
 ---
 
