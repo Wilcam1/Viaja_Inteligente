@@ -342,6 +342,12 @@ const poiLayers = {
     tolls: L.layerGroup(),
     lodgings: L.layerGroup()
 };
+const modalPoiLayers = {
+    fuels: L.layerGroup(),
+    chargings: L.layerGroup(),
+    tolls: L.layerGroup(),
+    lodgings: L.layerGroup()
+};
 
 const fuelIcon = L.divIcon({
     html: `<div class="poi-marker marker-fuel">⛽</div>`,
@@ -384,6 +390,9 @@ function updateMap(origin, destination, originCoords, destinationCoords, routeGe
     });
     for (let key in poiLayers) {
         poiLayers[key].clearLayers();
+    }
+    for (let key in modalPoiLayers) {
+        modalPoiLayers[key].clearLayers();
     }
 
     // Guardar los datos actuales del mapa
@@ -463,15 +472,16 @@ function openModalMap() {
         if (modalRouteLayer) modalMap.removeLayer(modalRouteLayer);
         if (modalOriginMarker) modalMap.removeLayer(modalOriginMarker);
         if (modalDestinationMarker) modalMap.removeLayer(modalDestinationMarker);
+        
+        // Limpiar capas de POIs anteriores en el modalMap
+        for (let key in modalPoiLayers) {
+            if (modalMap.hasLayer(modalPoiLayers[key])) {
+                modalMap.removeLayer(modalPoiLayers[key]);
+            }
+        }
     }
 
-    // Recalcular tamaño para Leaflet dentro del modal visible
-    setTimeout(() => {
-        modalMap.invalidateSize();
-        modalMap.fitBounds(modalRouteLayer.getBounds(), { padding: [40, 40] });
-    }, 150);
-
-    // Dibujar ruta en modal
+    // Dibujar ruta en modal antes de ajustar el zoom
     modalRouteLayer = L.geoJSON(routeGeometry, {
         style: {
             color: '#00E676',
@@ -480,10 +490,18 @@ function openModalMap() {
         }
     }).addTo(modalMap);
 
-    // Agregar marcadores de POI activos al modalMap
+    // Recalcular tamaño para Leaflet dentro del modal visible
+    setTimeout(() => {
+        modalMap.invalidateSize();
+        if (modalRouteLayer) {
+            modalMap.fitBounds(modalRouteLayer.getBounds(), { padding: [40, 40] });
+        }
+    }, 150);
+
+    // Agregar marcadores de POI activos al modalMap usando la capa del modal
     document.querySelectorAll('#map-section .poi-filters input[type="checkbox"]').forEach(checkbox => {
         if (checkbox.checked) {
-            poiLayers[checkbox.value].addTo(modalMap);
+            modalPoiLayers[checkbox.value].addTo(modalMap);
         }
     });
 
@@ -512,36 +530,68 @@ document.getElementById('map-modal').addEventListener('click', (e) => {
 
 // Poblar las capas de Leaflet con los datos de POIs
 function populatePOILayers(data) {
+    // Limpiar capas anteriores
+    for (let key in poiLayers) {
+        poiLayers[key].clearLayers();
+    }
+    for (let key in modalPoiLayers) {
+        modalPoiLayers[key].clearLayers();
+    }
+
     if (data.fuels) {
         data.fuels.forEach(p => {
             if (!p || p.lat === null || p.lon === null || isNaN(p.lat) || isNaN(p.lon)) return;
+            // Marcador para el mapa principal
             const marker = L.marker([p.lat, p.lon], { icon: fuelIcon })
                 .bindPopup(`<b>⛽ Gasolinera:</b> ${p.name}`);
             poiLayers.fuels.addLayer(marker);
+            
+            // Marcador para el mapa del modal (duplicado)
+            const modalMarker = L.marker([p.lat, p.lon], { icon: fuelIcon })
+                .bindPopup(`<b>⛽ Gasolinera:</b> ${p.name}`);
+            modalPoiLayers.fuels.addLayer(modalMarker);
         });
     }
     if (data.charging_stations) {
         data.charging_stations.forEach(p => {
             if (!p || p.lat === null || p.lon === null || isNaN(p.lat) || isNaN(p.lon)) return;
+            // Marcador para el mapa principal
             const marker = L.marker([p.lat, p.lon], { icon: chargingIcon })
                 .bindPopup(`<b>⚡ Estación Eléctrica:</b> ${p.name}`);
             poiLayers.chargings.addLayer(marker);
+            
+            // Marcador para el mapa del modal (duplicado)
+            const modalMarker = L.marker([p.lat, p.lon], { icon: chargingIcon })
+                .bindPopup(`<b>⚡ Estación Eléctrica:</b> ${p.name}`);
+            modalPoiLayers.chargings.addLayer(modalMarker);
         });
     }
     if (data.tolls) {
         data.tolls.forEach(p => {
             if (!p || p.lat === null || p.lon === null || isNaN(p.lat) || isNaN(p.lon)) return;
+            // Marcador para el mapa principal
             const marker = L.marker([p.lat, p.lon], { icon: tollIcon })
                 .bindPopup(`<b>🪙 Peaje:</b> ${p.name}`);
             poiLayers.tolls.addLayer(marker);
+            
+            // Marcador para el mapa del modal (duplicado)
+            const modalMarker = L.marker([p.lat, p.lon], { icon: tollIcon })
+                .bindPopup(`<b>🪙 Peaje:</b> ${p.name}`);
+            modalPoiLayers.tolls.addLayer(modalMarker);
         });
     }
     if (data.lodgings) {
         data.lodgings.forEach(p => {
             if (!p || p.lat === null || p.lon === null || isNaN(p.lat) || isNaN(p.lon)) return;
+            // Marcador para el mapa principal
             const marker = L.marker([p.lat, p.lon], { icon: lodgingIcon })
                 .bindPopup(`<b>🏨 Hospedaje/Descanso:</b> ${p.name}`);
             poiLayers.lodgings.addLayer(marker);
+            
+            // Marcador para el mapa del modal (duplicado)
+            const modalMarker = L.marker([p.lat, p.lon], { icon: lodgingIcon })
+                .bindPopup(`<b>🏨 Hospedaje/Descanso:</b> ${p.name}`);
+            modalPoiLayers.lodgings.addLayer(modalMarker);
         });
     }
 }
@@ -605,10 +655,10 @@ document.querySelectorAll('.poi-filters input[type="checkbox"]').forEach(checkbo
                 await fetchPOIs();
             }
             if (map) poiLayers[type].addTo(map);
-            if (modalMap) poiLayers[type].addTo(modalMap);
+            if (modalMap) modalPoiLayers[type].addTo(modalMap);
         } else {
             if (map) map.removeLayer(poiLayers[type]);
-            if (modalMap) modalMap.removeLayer(poiLayers[type]);
+            if (modalMap) modalMap.removeLayer(modalPoiLayers[type]);
         }
     });
 });
