@@ -970,3 +970,19 @@ input[type="text"]:focus, input[type="number"]:focus {
     box-shadow: 0 0 8px rgba(233, 30, 99, 0.4);
 }
 
+.main-footer {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding-top: 2rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    margin-top: 1rem;
+    width: 100%;
+}
+.main-footer strong {
+    color: var(--text);
+    font-weight: 500;
+}
+
+
