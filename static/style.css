@@ -158,6 +158,22 @@ h1, h2, h3, h4, .logo-title, .section-title, .ia-version {
     margin-top: 0.1rem;
 }
 
+.project-description {
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+    margin-bottom: 1.8rem;
+    background: rgba(255, 255, 255, 0.015);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    padding: 1rem 1.2rem;
+    border-radius: 16px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+.project-description strong {
+    color: var(--text);
+    font-weight: 500;
+}
+
 /* Grillas de Formulario */
 .form-grid-2 {
     display: grid;
